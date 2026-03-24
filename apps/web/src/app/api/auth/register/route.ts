@@ -3,6 +3,7 @@ import { prisma } from '@estateiq/database'
 import bcrypt from 'bcryptjs'
 import { logger } from '@/lib/logger'
 import { rateLimit } from '@/lib/rateLimit'
+import { getPasswordPolicyErrorMessage, passwordMeetsPolicy } from '@/lib/passwordPolicy'
 
 export async function POST(req: Request) {
 
@@ -23,11 +24,8 @@ export async function POST(req: Request) {
       )
     }
 
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters' },
-        { status: 400 }
-      )
+    if (!passwordMeetsPolicy(password)) {
+      return NextResponse.json({ error: getPasswordPolicyErrorMessage() }, { status: 400 })
     }
 
     const existing = await prisma.authUser.findUnique({ where: { email } })

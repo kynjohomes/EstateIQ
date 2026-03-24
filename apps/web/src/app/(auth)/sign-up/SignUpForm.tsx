@@ -4,15 +4,17 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Check } from 'lucide-react'
 import logo from '@/components/images/logo2.png'
 import { useSearchParams } from 'next/navigation'
+import { passwordMeetsPolicy, passwordRules } from '@/lib/passwordPolicy'
 
 export default function SignUpForm() {
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [consent, setConsent] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const searchParams = useSearchParams()
   const plan = searchParams.get('plan') ?? 'STARTER'
 
@@ -20,6 +22,10 @@ export default function SignUpForm() {
     e.preventDefault()
     if (!consent) {
       setError('You must agree to the Terms of Service and Privacy Policy to continue.')
+      return
+    }
+    if (!passwordMeetsPolicy(form.password)) {
+      setError('Please create a stronger password that meets all requirements below.')
       return
     }
     setLoading(true)
@@ -67,20 +73,69 @@ export default function SignUpForm() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {(['name', 'email', 'password'] as const).map(field => (
-            <div key={field}>
-              <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
-                {field}
-              </label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">name</label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              required
+              autoComplete="name"
+              className="w-full border border-gray-200 rounded px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">email</label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+              required
+              autoComplete="email"
+              className="w-full border border-gray-200 rounded px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">password</label>
+            <div className="relative">
               <input
-                type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}
-                value={form[field]}
-                onChange={e => setForm(p => ({ ...p, [field]: e.target.value }))}
+                type={showPassword ? 'text' : 'password'}
+                value={form.password}
+                onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
                 required
-                className="w-full border border-gray-200 rounded px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                autoComplete="new-password"
+                className="w-full border border-gray-200 rounded px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-green-500"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(p => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
             </div>
-          ))}
+            <ul className="mt-2 space-y-1.5" aria-live="polite">
+              {passwordRules.map(rule => {
+                const met = rule.test(form.password)
+                return (
+                  <li
+                    key={rule.id}
+                    className={`flex items-start gap-2 text-xs ${met ? 'text-green-700' : 'text-gray-500'}`}
+                  >
+                    <span
+                      className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                        met ? 'border-green-600 bg-green-50 text-green-700' : 'border-gray-300'
+                      }`}
+                    >
+                      {met ? <Check size={10} strokeWidth={3} /> : null}
+                    </span>
+                    <span>{rule.label}</span>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
 
           <div className="flex items-start gap-3 pt-1">
             <input
@@ -105,7 +160,7 @@ export default function SignUpForm() {
 
           <button
             type="submit"
-            disabled={loading || !consent}
+            disabled={loading || !consent || !passwordMeetsPolicy(form.password)}
             className="w-full bg-green-600 text-white rounded py-2.5 text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition flex items-center justify-center gap-2 mt-2"
           >
             {loading ? (
