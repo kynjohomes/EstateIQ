@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs'
-
 import { PrismaClient } from './src/generated/prisma'
 
 const globalForPrisma = globalThis as unknown as {
@@ -9,28 +7,11 @@ const globalForPrisma = globalThis as unknown as {
 const GLOBAL_DB_URL_KEY = '__ESTATEIQ_DATABASE_URL__' as const
 
 /**
- * On Linux serverless (Netlify/AWS), the real process environment is still in
- * `/proc/self/environ` even when Next.js/webpack replaces `process.env` in the bundle.
- */
-function readDatabaseUrlFromLinuxProc(): string | undefined {
-  if (typeof process === 'undefined' || process.platform === 'win32') return undefined
-  try {
-    const raw = readFileSync('/proc/self/environ', 'utf8')
-    for (const entry of raw.split('\0')) {
-      if (entry.startsWith('DATABASE_URL=')) {
-        const v = entry.slice('DATABASE_URL='.length)
-        if (v.trim().length > 0) return v.trim()
-      }
-    }
-  } catch {
-    // Not Linux or unreadable
-  }
-  return undefined
-}
-
-/**
- * Next.js may inline `process.env.DATABASE_URL` at build time as `undefined`, which makes
- * Prisma fall back to `localhost:5432`. Read order: instrumentation global → Linux proc → env.
+ * Do not import `node:fs` here — this package is imported from layouts/RSC and would pull
+ * `fs` into Edge/ESM bundles (`require is not defined`). `/proc` + env mirroring lives in
+ * `apps/web/src/instrumentation.ts` (Node-only) instead.
+ *
+ * Read order: instrumentation global → process.env (dynamic keys to reduce build-time inlining).
  */
 function readDatabaseUrlFromEnv(): string | undefined {
   const g = globalThis as unknown as Record<string, string | undefined>
@@ -38,9 +19,6 @@ function readDatabaseUrlFromEnv(): string | undefined {
   if (typeof fromGlobal === 'string' && fromGlobal.trim().length > 0) {
     return fromGlobal.trim()
   }
-
-  const fromProc = readDatabaseUrlFromLinuxProc()
-  if (fromProc) return fromProc
 
   const reflect = Reflect.get(process.env, 'DATABASE_URL')
   if (typeof reflect === 'string' && reflect.trim().length > 0) return reflect.trim()

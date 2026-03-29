@@ -1,10 +1,10 @@
-import { readFileSync } from 'node:fs'
-
 const GLOBAL_KEY = '__ESTATEIQ_DATABASE_URL__' as const
 
-function readDatabaseUrlFromLinuxProc(): string | undefined {
+/** Dynamic import keeps `node:fs` out of static analysis for non-Node bundles. */
+async function readDatabaseUrlFromLinuxProc(): Promise<string | undefined> {
   if (typeof process === 'undefined' || process.platform === 'win32') return undefined
   try {
+    const { readFileSync } = await import('node:fs')
     const raw = readFileSync('/proc/self/environ', 'utf8')
     for (const entry of raw.split('\0')) {
       if (entry.startsWith('DATABASE_URL=')) {
@@ -23,10 +23,10 @@ function readDatabaseUrlFromLinuxProc(): string | undefined {
  * can read it even when Next.js/webpack inlines `process.env.DATABASE_URL` as undefined.
  * Falls back to /proc/self/environ on Linux (real OS env on Netlify).
  */
-export function register() {
+export async function register() {
   let url = process.env.DATABASE_URL
   if (typeof url !== 'string' || url.trim().length === 0) {
-    url = readDatabaseUrlFromLinuxProc()
+    url = await readDatabaseUrlFromLinuxProc()
   }
   if (typeof url === 'string' && url.trim().length > 0) {
     ;(globalThis as unknown as Record<string, string | undefined>)[GLOBAL_KEY] = url.trim()
