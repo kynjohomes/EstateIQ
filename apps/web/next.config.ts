@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Prisma + monorepo DB package: keep server-side env reads at runtime where possible.
+  serverExternalPackages: ['@estateiq/database', 'prisma', '@prisma/client'],
+
   async headers() {
     return [
       {

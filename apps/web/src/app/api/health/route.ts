@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server'
-import { prisma, Prisma } from '@estateiq/database'
+import {
+  prisma,
+  Prisma,
+  isDatabaseUrlConfigured,
+  isDatabaseUrlLocalhost,
+} from '@estateiq/database'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,8 +39,11 @@ export async function GET() {
           error:  message,
           ...(prismaInit?.errorCode && { prismaErrorCode: prismaInit.errorCode }),
         },
-        ...(!process.env.DATABASE_URL && {
-          hint: 'DATABASE_URL is not set for this serverless function. In Netlify: Site configuration → Environment variables → add DATABASE_URL and ensure scope includes Functions (or All), then redeploy.',
+        ...(!isDatabaseUrlConfigured() && {
+          hint: 'DATABASE_URL is not visible at runtime (Next.js may have inlined it as undefined during build). Set DATABASE_URL in Netlify for Builds and Functions, then redeploy.',
+        }),
+        ...(isDatabaseUrlLocalhost() && {
+          hint: 'DATABASE_URL points at localhost. Use your Railway (or other host) public connection string in Netlify — not a local Postgres URL.',
         }),
       },
       { status: 503 }
