@@ -12,6 +12,7 @@
   NPM_FLAGS       = "--legacy-peer-deps"
   TURBO_TELEMETRY_DISABLED = "1"
   # next-auth/react inlines NEXTAUTH_URL in client chunks (public site URL). TERMII_SENDER_ID often matches visible SMS sender text.
-  SECRETS_SCAN_OMIT_KEYS = "NEXTAUTH_URL,TERMII_SENDER_ID"
+  # NEXT_PUBLIC_* keys are intentionally embedded in JS (public Turnstile site key, same pattern as Paystack publishable key).
+  SECRETS_SCAN_OMIT_KEYS = "NEXTAUTH_URL,TERMII_SENDER_ID,NEXT_PUBLIC_TURNSTILE_SITE_KEY,NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY"
   # Set in Netlify UI (Site → Environment variables), not in this file: DATABASE_URL, AUTH_SECRET,
   # NEXTAUTH_URL (https://estateiq.homes), and any SMTP/OAuth keys your routes use.
