@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Building2, Users, ShieldCheck } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/components/images/hero-estate.jpg";
 
@@ -12,11 +13,10 @@ const stats = [
   { icon: ShieldCheck, value: "99.8%", label: "Uptime" },
 ];
 
-type HeroProps = {
-  isLoggedIn?: boolean;
-};
+const Hero = () => {
+  const { status } = useSession();
+  const isLoggedIn = status === "authenticated";
 
-const Hero = ({ isLoggedIn = false }: HeroProps) => {
   return (
     <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden">
       {/* Background image with overlay */}

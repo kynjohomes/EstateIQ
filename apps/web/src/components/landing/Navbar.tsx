@@ -4,14 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
+import { useSession } from "next-auth/react";
 import logo from "@/components/images/logo.png";
 import { Button } from "@/components/ui/button";
 
-type NavbarProps = {
-  isLoggedIn?: boolean;
-};
-
-const Navbar = ({ isLoggedIn = false }: NavbarProps) => {
+const Navbar = () => {
+  const { status } = useSession();
+  const isLoggedIn = status === "authenticated";
   const [open, setOpen] = useState(false);
 
   const links = [

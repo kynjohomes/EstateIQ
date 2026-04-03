@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
-type CTAProps = {
-  isLoggedIn?: boolean;
-};
-
-const CTA = ({ isLoggedIn = false }: CTAProps) => {
+const CTA = () => {
+  const { status } = useSession();
+  const isLoggedIn = status === "authenticated";
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 

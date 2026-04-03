@@ -2,7 +2,6 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@estateiq/database'
 import DashboardShell from '@/components/layout/DashboardShell'
-import SessionProvider from '@/components/layout/SessionProvider'
 import { ResidentProvider } from '@/context/ResidentContext'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { SubscriptionProvider } from '@/context/SubscriptionContext'
@@ -22,17 +21,15 @@ export default async function DashboardLayout({
   if (!resident) redirect('/onboarding')
 
   return (
-    <SessionProvider session={session}>
-      <ResidentProvider>
+    <ResidentProvider>
       <SubscriptionProvider>
-      <DashboardShell>
-        <SubscriptionBanner />
-        <ErrorBoundary>
-          {children}
-        </ErrorBoundary>
-      </DashboardShell>
-    </SubscriptionProvider>
-      </ResidentProvider>
-    </SessionProvider>
+        <DashboardShell>
+          <SubscriptionBanner />
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </DashboardShell>
+      </SubscriptionProvider>
+    </ResidentProvider>
   )
 }

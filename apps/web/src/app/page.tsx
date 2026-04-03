@@ -1,4 +1,3 @@
-import { auth } from '@/lib/auth'
 import Navbar from '@/components/landing/Navbar'
 import Hero from '@/components/landing/Hero'
 import Features from '@/components/landing/Features'
@@ -12,21 +11,18 @@ import Footer from '@/components/landing/Footer'
 /** Session-aware UI must not be served from a stale static/RSC cache after sign-out. */
 export const dynamic = 'force-dynamic'
 
-export default async function RootPage() {
-  const session = await auth()
-  const isLoggedIn = !!session
-
+export default function RootPage() {
   return (
     <>
-      <Navbar isLoggedIn={isLoggedIn} />
+      <Navbar />
       <main>
-        <Hero isLoggedIn={isLoggedIn} />
+        <Hero />
         <Features />
         <HowItWorks />
         <Testimonials />
         <Pricing />
         <FAQ />
-        <CTA isLoggedIn={isLoggedIn} />
+        <CTA />
       </main>
       <Footer />
     </>
