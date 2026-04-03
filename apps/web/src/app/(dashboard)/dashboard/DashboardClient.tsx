@@ -51,8 +51,6 @@ export default function DashboardClient() {
 
   useEffect(() => {
     load()
-    const interval = setInterval(load, 60000)
-    return () => clearInterval(interval)
   }, [load])
 
   function fmt(n: number) {
