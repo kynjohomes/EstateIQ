@@ -29,8 +29,6 @@ dist
 
 # Prisma generated client
 packages/database/src/generated/
-# Copied into apps/web for Netlify/serverless (see apps/web/scripts/copy-prisma-generated.mjs)
-apps/web/src/generated/
 
 
 # Debug

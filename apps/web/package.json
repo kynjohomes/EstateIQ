@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate --schema=../../packages/database/prisma/schema.prisma && node scripts/copy-prisma-generated.mjs && next build",
+    "build": "next build",
     "typecheck": "tsc --noEmit",
     "start": "next start",
     "lint": "eslint",

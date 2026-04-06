@@ -1,24 +1,13 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-/** Monorepo root (estateiq/), parent of apps/ and packages/ */
-const monorepoRoot = path.join(__dirname, "../..");
-
 const nextConfig: NextConfig = {
-  // Trace workspace files from repo root (Netlify monorepo + custom Prisma output).
-  outputFileTracingRoot: monorepoRoot,
   // Keep Prisma as external (runtime env + native engine). Do NOT list `@estateiq/database` here —
   // it lives outside `node_modules` and externalizing it drops the generated query-engine binaries
   // from the Netlify bundle (Prisma looks for `libquery_engine-rhel-openssl-3.0.x.so.node`).
   serverExternalPackages: ["@prisma/client", "prisma"],
-  // Paths relative to apps/web (Next project dir). Copy script mirrors engines into src/generated/prisma for Netlify.
+  // Monorepo: custom Prisma output — force-include Linux engines for Netlify (RHEL/OpenSSL 3).
   outputFileTracingIncludes: {
-    "/*": [
-      "../../packages/database/src/generated/prisma/**/*",
-      "src/generated/prisma/**/*",
-    ],
+    "/*": ["../../packages/database/src/generated/prisma/**/*"],
   },
   async headers() {
     return [
