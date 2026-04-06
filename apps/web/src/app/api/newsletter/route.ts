@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma, Prisma } from '@estateiq/database'
+import { prisma, Prisma, isDatabaseUrlConfigured } from '@estateiq/database'
 import { sendNewsletterSignupEmail } from '@/lib/contactMailer'
 import { sanitizeEmail } from '@/lib/sanitize'
 
@@ -35,7 +35,9 @@ export async function POST(req: Request) {
       data: { email, source: source ?? null },
     })
     isNewSubscriber = true
-  } catch (e) {
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e)
+
     if (e instanceof Prisma.PrismaClientKnownRequestError) {
       if (e.code === 'P2002') {
         return NextResponse.json({ ok: true, alreadySubscribed: true })
@@ -54,6 +56,62 @@ export async function POST(req: Request) {
         )
       }
     }
+
+    const initErr =
+      e instanceof Prisma.PrismaClientInitializationError ? e : null
+    const dbUnreachable =
+      Boolean(initErr) ||
+      (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P1001') ||
+      /Can't reach database server|connection (closed|reset)|ConnectionReset|ECONNREFUSED|ETIMEDOUT/i.test(
+        message
+      )
+
+    if (dbUnreachable) {
+      const urlReadable = isDatabaseUrlConfigured()
+      const prismaStillUsingLocalhost =
+        /localhost:5432|127\.0\.0\.1:5432/i.test(message)
+
+      if (!urlReadable || prismaStillUsingLocalhost) {
+        console.error('[api/newsletter] DATABASE_URL not visible or points at localhost')
+        return NextResponse.json(
+          {
+            error:
+              process.env.NODE_ENV === 'development'
+                ? 'DATABASE_URL is not set or not visible. Add it to apps/web/.env.local and restart the dev server (production: set DATABASE_URL on your host and redeploy).'
+                : 'Service temporarily unavailable. Please try again later.',
+            code: 'DATABASE_URL_MISSING',
+          },
+          { status: 503 }
+        )
+      }
+
+      console.error('[api/newsletter] db unreachable', message)
+      return NextResponse.json(
+        {
+          error:
+            process.env.NODE_ENV === 'development'
+              ? 'Could not reach Postgres. Check DATABASE_URL, that the database is running, and network/SSL settings.'
+              : 'Could not save subscription right now. Please try again in a moment.',
+          code: 'DATABASE_CONNECTION_FAILED',
+        },
+        { status: 503 }
+      )
+    }
+
+    if (/DATABASE_URL is not set/i.test(message)) {
+      console.error('[api/newsletter] DATABASE_URL not configured')
+      return NextResponse.json(
+        {
+          error:
+            process.env.NODE_ENV === 'development'
+              ? 'DATABASE_URL is not set. Add it to apps/web/.env.local and restart.'
+              : 'Service temporarily unavailable. Please try again later.',
+          code: 'DATABASE_URL_MISSING',
+        },
+        { status: 503 }
+      )
+    }
+
     console.error('[api/newsletter] db', e)
     return NextResponse.json({ error: 'Could not save subscription. Please try again later.' }, { status: 500 })
   }
